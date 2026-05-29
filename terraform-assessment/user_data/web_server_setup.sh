@@ -1,16 +1,22 @@
 #!/bin/bash
 yum update -y
-amazon-linux-extras enable postgresql14
-yum clean metadata
-yum install -y postgresql postgresql-server
-postgresql-setup initdb
-sed -i 's/^local\s\+all\s\+all\s\+peer/local   all   all   md5/' /var/lib/pgsql/data/pg_hba.conf
-echo "host all all 10.0.0.0/16 md5" >> /var/lib/pgsql/data/pg_hba.conf
-sed -i "s/^#listen_addresses = 'localhost'/listen_addresses = '*'/" /var/lib/pgsql/data/postgresql.conf
-systemctl start postgresql
-systemctl enable postgresql
-sudo -u postgres psql -c "CREATE USER dbadmin WITH SUPERUSER PASSWORD 'TechCorp2024!';"
-sudo -u postgres psql -c "CREATE DATABASE techcorp OWNER dbadmin;"
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+cat > /var/www/html/index.html <<HTML
+<!DOCTYPE html>
+<html>
+<head><title>TechCorp Web Server</title>
+<style>body{font-family:Arial,sans-serif;text-align:center;margin-top:80px;background:#f0f4f8}.card{background:white;display:inline-block;padding:40px 60px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}h1{color:#2d6a4f}</style>
+</head>
+<body><div class="card">
+<h1>TechCorp Web Server</h1>
+<p>Instance ID: <strong>${INSTANCE_ID}</strong></p>
+<p>Private IP: <strong>${PRIVATE_IP}</strong></p>
+</div></body></html>
+HTML
 useradd -m -s /bin/bash webadmin
 echo "webadmin:TechCorp2024!" | chpasswd
 sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
